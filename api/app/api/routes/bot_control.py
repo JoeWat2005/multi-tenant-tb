@@ -2,6 +2,8 @@
 so the UI has a single entry point for "the bot"."""
 from __future__ import annotations
 
+import asyncio
+import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -13,6 +15,8 @@ from app.auth.dependencies import current_tenant, get_db
 from app.models.bot_config import BotConfig
 from app.models.tenant import Tenant
 from app.services.tenant import session_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/bot", tags=["bot"])
 
@@ -153,6 +157,14 @@ async def start(
             "Alpaca API keys are not configured. Add ALPACA_API_KEY + ALPACA_API_SECRET to your .env.",
         )
 
+    # Prep all the data the first cycle will need — synchronously, before we
+    # flip the session to RUNNING + set next_run_at=now. This adds a few
+    # seconds of latency to the start request but guarantees the first
+    # BotDecision row sees real candles + sentiment instead of NULLs. After
+    # this initial seed, the regular cadences (TickScheduler 60s + Sentiment
+    # Refresher 15m) take over and operate normally.
+    await _seed_initial_data(cfg.symbol, cfg.interval)
+
     session = session_service.start_session(db, tenant.id, cfg)
     state.tenant_registry.ensure(tenant.id, cfg)
 
@@ -163,6 +175,41 @@ async def start(
         await state.market_ws.reconnect()
 
     return {"ok": True, "session_id": session.id, "status": session.status}
+
+
+async def _seed_initial_data(symbol: str, interval: str) -> None:
+    """Run on /start before the session goes RUNNING. In order:
+      1. Pull recent closed candles from Alpaca → `candles` table.
+         (Required so `price_action` has data to score and so the first
+         cycle's `MarketContext.candles` is non-empty.)
+      2. Refresh every sentiment source against the freshly-loaded candles.
+    Each refresh function swallows its own errors, and the outer try/except
+    means a flaky upstream can't block the user from starting the bot."""
+    from app.db.session import SessionLocal
+    from app.services.shared import market_data_service, sentiment_service
+
+    def _run() -> None:
+        db = SessionLocal()
+        try:
+            try:
+                market_data_service.refresh(db, symbol, interval)
+            except Exception:
+                logger.exception("Initial candle refresh failed for %s", symbol)
+            sentiment_service.refresh_fear_greed(db)
+            sentiment_service.refresh_alpaca_news(db, symbol)
+            sentiment_service.refresh_rss(db, symbol)
+            sentiment_service.refresh_price_action(db, symbol)
+        finally:
+            db.close()
+
+    try:
+        # Hard cap so a stuck upstream doesn't keep the user waiting forever.
+        await asyncio.wait_for(asyncio.to_thread(_run), timeout=20.0)
+        logger.info("Initial seed complete for %s", symbol)
+    except asyncio.TimeoutError:
+        logger.warning("Initial seed timed out after 20s for %s — starting anyway", symbol)
+    except Exception:
+        logger.exception("Initial seed failed for %s", symbol)
 
 
 @router.post("/stop")
