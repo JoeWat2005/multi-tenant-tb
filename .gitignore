@@ -1,0 +1,104 @@
+# ── Secrets / env ────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+# Keep templates checked in:
+!.env.example
+!.env.local.example
+
+# ── Python ───────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtualenvs (project uses `env/` at the repo root + sometimes nested)
+env/
+venv/
+.venv/
+ENV/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+wheels/
+pip-wheel-metadata/
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+
+# Jupyter / IPython
+.ipynb_checkpoints/
+
+# ── Node / Next.js ───────────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.*
+
+# Build output
+.next/
+out/
+build/
+*.tsbuildinfo
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Bundler / monorepo
+.turbo/
+
+# ── Databases (SQLite dev DBs) ───────────────────────────────────────────
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# ── OS noise ─────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ── Editors / IDEs ───────────────────────────────────────────────────────
+.idea/
+.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+*.swp
+*.swo
+*.swn
+.project
+.classpath
+
+# ── Local notes / scratch ────────────────────────────────────────────────
+.scratch/
+TODO.local.md
+*.local
