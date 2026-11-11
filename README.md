@@ -1,8 +1,11 @@
+> [!WARNING]
+> **Deprecated: no longer maintained.** Last updated in April 2026, while still at an early stage; kept for reference.
+
 # Claude Trader v2 (multi-tenant)
 
 A multi-tenant crypto trading bot platform: each signed-in user runs their own bot session, in which Claude reviews the market on a schedule and approved trades are placed through Alpaca, on the paper-trading endpoint by default.
 
-**Status:** early-stage. This is a multi-tenant rebuild of an earlier single-tenant bot and dashboard, which are not part of this repository. There are no database migrations yet, and the development database is reset on every start by default.
+**Status:** deprecated at an early stage. This is a multi-tenant rebuild of an earlier single-tenant bot and dashboard, which are not part of this repository. There are no database migrations yet, and the development database is reset on every start by default.
 
 For research and education only. This is not financial advice. Keep `ALPACA_PAPER=true` unless you intend to place real orders.
 
